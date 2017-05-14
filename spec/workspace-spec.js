@@ -984,6 +984,29 @@ describe('Workspace', () => {
     })
   })
 
+  describe('finding items in the workspace', () => {
+    it('can identify the pane and pane container for a given item or URI', () => {
+      const uri = 'atom://test-pane-for-item'
+      const item = {
+        element: document.createElement('div'),
+        getURI () { return uri }
+      }
+
+      atom.workspace.getActivePane().activateItem(item)
+      expect(atom.workspace.paneForItem(item)).toBe(atom.workspace.getCenter().getActivePane())
+      expect(atom.workspace.paneContainerForItem(item)).toBe(atom.workspace.getCenter())
+      expect(atom.workspace.paneForURI(uri)).toBe(atom.workspace.getCenter().getActivePane())
+      expect(atom.workspace.paneContainerForURI(uri)).toBe(atom.workspace.getCenter())
+
+      atom.workspace.getActivePane().destroyActiveItem()
+      atom.workspace.getLeftDock().getActivePane().activateItem(item)
+      expect(atom.workspace.paneForItem(item)).toBe(atom.workspace.getLeftDock().getActivePane())
+      expect(atom.workspace.paneContainerForItem(item)).toBe(atom.workspace.getLeftDock())
+      expect(atom.workspace.paneForURI(uri)).toBe(atom.workspace.getLeftDock().getActivePane())
+      expect(atom.workspace.paneContainerForURI(uri)).toBe(atom.workspace.getLeftDock())
+    })
+  })
+
   describe('::hide(uri)', () => {
     let item
     const URI = 'atom://hide-test'
@@ -2463,7 +2486,7 @@ i = /test/; #FIXME\
       waitsForPromise(() => atom.workspace.open())
     })
 
-    it('closes the active pane item, or the active pane if it is empty, or the current window if there is only the empty root pane', () => {
+    it('closes the active center pane item, or the active center pane if it is empty, or the current window if there is only the empty root pane in the center', async () => {
       atom.config.set('core.destroyEmptyPanes', false)
 
       const pane1 = atom.workspace.getActivePane()
@@ -2484,10 +2507,22 @@ i = /test/; #FIXME\
       atom.workspace.closeActivePaneItemOrEmptyPaneOrWindow()
       expect(atom.workspace.getCenter().getPanes().length).toBe(1)
       expect(pane1.getItems().length).toBe(0)
-
-      atom.workspace.closeActivePaneItemOrEmptyPaneOrWindow()
       expect(atom.workspace.getCenter().getPanes().length).toBe(1)
 
+      // The dock items should not be closed
+      await atom.workspace.open({
+        getTitle: () => 'Permanent Dock Item',
+        element: document.createElement('div'),
+        getDefaultLocation: () => 'left',
+        isPermanentDockItem: () => true
+      })
+      await atom.workspace.open({
+        getTitle: () => 'Impermanent Dock Item',
+        element: document.createElement('div'),
+        getDefaultLocation: () => 'left'
+      })
+
+      expect(atom.workspace.getLeftDock().getPaneItems().length).toBe(2)
       atom.workspace.closeActivePaneItemOrEmptyPaneOrWindow()
       expect(atom.close).toHaveBeenCalled()
     })

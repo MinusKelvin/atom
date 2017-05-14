@@ -599,12 +599,17 @@ class Pane
   # setting is `true`.
   #
   # * `item` Item to destroy
-  destroyItem: (item) ->
+  # * `force` (optional) {Boolean} Destroy the item without prompting to save
+  #    it, even if the item's `isPermanentDockItem` method returns true.
+  #
+  # Returns a {Boolean} indicating whether or not the item was destroyed.
+  destroyItem: (item, force) ->
     index = @items.indexOf(item)
     if index isnt -1
+      return false if not force and @getContainer()?.getLocation() isnt 'center' and item.isPermanentDockItem?()
       @emitter.emit 'will-destroy-item', {item, index}
       @container?.willDestroyPaneItem({item, index, pane: this})
-      if @promptToSaveItem(item)
+      if force or @promptToSaveItem(item)
         @removeItem(item, false)
         item.destroy?()
         true

@@ -470,8 +470,12 @@ module.exports = class Workspace extends Model {
     }
   }
 
-  didHideDock () {
-    this.getCenter().activate()
+  didHideDock (dock) {
+    const {activeElement} = document
+    const dockElement = dock.getElement()
+    if (dockElement === activeElement || dockElement.contains(activeElement)) {
+      this.getCenter().activate()
+    }
   }
 
   setDraggingItem (draggingItem) {
@@ -1307,7 +1311,7 @@ module.exports = class Workspace extends Model {
   // {::saveActivePaneItemAs} # will be called instead. This method does nothing
   // if the active item does not implement a `.save` method.
   saveActivePaneItem () {
-    this.getActivePane().saveActiveItem()
+    this.getCenter().getActivePane().saveActiveItem()
   }
 
   // Prompt the user for a path and save the active pane item to it.
@@ -1316,7 +1320,7 @@ module.exports = class Workspace extends Model {
   // `.saveAs` on the item with the selected path. This method does nothing if
   // the active item does not implement a `.saveAs` method.
   saveActivePaneItemAs () {
-    this.getActivePane().saveActiveItemAs()
+    this.getCenter().getActivePane().saveActiveItemAs()
   }
 
   // Destroy (close) the active pane item.
@@ -1373,6 +1377,16 @@ module.exports = class Workspace extends Model {
     return this.getPaneContainers().find(container => container.paneForURI(uri))
   }
 
+  // Extended: Get the first pane container that contains the given item.
+  //
+  // * `item` the Item that the returned pane container must contain.
+  //
+  // Returns a {Dock}, the {WorkspaceCenter}, or `undefined` if no item exists
+  // with the given URI.
+  paneContainerForItem (uri) {
+    return this.getPaneContainers().find(container => container.paneForItem(uri))
+  }
+
   // Extended: Get the first {Pane} that contains an item with the given URI.
   //
   // * `uri` {String} uri
@@ -1389,7 +1403,7 @@ module.exports = class Workspace extends Model {
 
   // Extended: Get the {Pane} containing the given item.
   //
-  // * `item` Item the returned pane contains.
+  // * `item` the Item that the returned pane must contain.
   //
   // Returns a {Pane} or `undefined` if no pane exists for the given item.
   paneForItem (item) {
@@ -1409,13 +1423,13 @@ module.exports = class Workspace extends Model {
     }
   }
 
-  // Close the active pane item, or the active pane if it is empty,
-  // or the current window if there is only the empty root pane.
+  // Close the active center pane item, or the active center pane if it is
+  // empty, or the current window if there is only the empty root pane.
   closeActivePaneItemOrEmptyPaneOrWindow () {
-    if (this.getActivePaneItem() != null) {
-      this.destroyActivePaneItem()
+    if (this.getCenter().getActivePaneItem() != null) {
+      this.getCenter().getActivePane().destroyActiveItem()
     } else if (this.getCenter().getPanes().length > 1) {
-      this.destroyActivePane()
+      this.getCenter().destroyActivePane()
     } else if (this.config.get('core.closeEmptyWindows')) {
       atom.close()
     }
