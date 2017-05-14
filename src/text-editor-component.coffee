@@ -526,12 +526,12 @@ class TextEditorComponent
 
   onMouseDown: (event) =>
     # Handle middle mouse button on linux platform only (paste clipboard)
-    if event.button is 1 and process.platform is 'linux'
-      if selection = require('./safe-clipboard').readText('selection')
-        screenPosition = @screenPositionForMouseEvent(event)
-        @editor.setCursorScreenPosition(screenPosition, autoscroll: false)
-        @editor.insertText(selection)
-        return
+#    if event.button is 1 and process.platform is 'linux'
+#      if selection = require('./safe-clipboard').readText('selection')
+#        screenPosition = @screenPositionForMouseEvent(event)
+#        @editor.setCursorScreenPosition(screenPosition, autoscroll: false)
+#        @editor.insertText(selection)
+#        return
 
     # Handle mouse down events for left mouse button only
     # (except middle mouse button on linux platform, see above)
